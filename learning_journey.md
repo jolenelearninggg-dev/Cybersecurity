@@ -33,7 +33,9 @@
 >>   2. 瀏覽器分析： 在 Autopsy 中分析自己的瀏覽紀錄、Cookie、快取。這在鑑識「人員行為」時非常重要。
 
 [NIST CFReDS - Hacking Case](https://cfreds.nist.gov/)
+
 [Digital Corpora](https://digitalcorpora.org/corpora/disk-images/)
+
 ---
 
 階段 2：發展網路安全監控與分析 (SOC Analyst)這是藍隊的核心工作，從被動的「鑑識」轉向主動的「檢測」。
