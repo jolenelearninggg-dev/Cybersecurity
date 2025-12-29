@@ -1,8 +1,26 @@
-## 🛡️ 滲透測試學習筆記：網頁列舉 (Web Enumeration)
-### 0. 核心心法：偵查 (Reconnaissance)
+# 🛡️ 滲透測試學習筆記：網頁列舉 (Web Enumeration)
+## 0. 核心心法：偵查 (Reconnaissance)
 在嘗試進入系統前，必須盡可能地收集目標的技術細節與隱藏路徑。網頁列舉的目標是發現那些被遺忘的檔案、沒鎖好的門或開發者的疏忽。
 
-#### 1. 基礎指紋識別 (Fingerprinting)
+### 1. DNS 子網域列舉 (DNS Subdomain Enumeration)
+當你的目標是一個網域 (Domain) 而非單一 IP 時使用。
+
+- 原理：公司常在主網域下架設多個子系統。透過 DNS 模式，我們可以找出隱藏的入口。
+
+- 工具： `gobuster dns`。
+
+- 實戰指令： `gobuster dns -d inlanefreight.com -w /usr/share/SecLists/Discovery/DNS/namelist.txt`
+
+- 關鍵動作：
+
+  - 安裝字典：使用 `sudo apt install seclists -y` 獲取專業字典檔。
+
+  - 設定解析：在 `/etc/resolv.conf` 加入公共 DNS（如 1.1.1.1）以確保解析速度與準確性。
+
+  - 發現價值：可能找到 admin.target.com 或 my.target.com 等高價值目標。
+
+
+### 2. 基礎指紋識別 (Fingerprinting)
 了解網站是用什麼技術架構搭建的，這能幫助我們縮小攻擊範圍。
 
 - Whatweb: 最推薦的快速識別工具。
@@ -19,7 +37,7 @@
 
   - 重點: Server 標頭會暴露軟體版本；Link 標頭可能暗示這是一個 WordPress 網站。
 
-#### 2. 目錄與子網域爆破 (Brute-forcing)
+### 3. 目錄與子網域爆破 (Brute-forcing)
 這是在尋找「肉眼看不見的路徑」。
 
 🛠️ 工具：Gobuster
@@ -37,7 +55,7 @@
 
     - 403 Forbidden: 目錄存在但權限被鎖住（值得關注）。
 
-#### 3. 關鍵的資訊洩漏點 (Information Disclosure)
+### 4. 關鍵的資訊洩漏點 (Information Disclosure)
 這些地方通常能直接拿到進入系統的鑰匙。
 
 - robots.txt:
@@ -55,7 +73,7 @@
 
   - 可能發現: 開發者在註解中留下了測試帳號與密碼 `admin:password123`。
 
-#### 4. 實戰脈絡回顧 (Attack Sequence)
+### 5. 實戰脈絡回顧 (Attack Sequence)
 以下是你成功拿到 Flag 的完整邏輯流程：
 
 1.啟動與確認: 點擊 Spawn Target 取得 IP 位址。
