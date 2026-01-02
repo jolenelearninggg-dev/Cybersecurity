@@ -50,4 +50,6 @@
 - Pagefile.sys： 擷取記憶體時，若時間允許，連同硬碟上的「分頁檔案」一起抓取，資訊會更完整。
 - 足跡最小化： 在受害電腦上的任何操作（移動滑鼠、點擊視窗）都會改變 RAM 的內容，操作動作愈少愈好。
 
-  
+
+這段影片詳細展示了如何使用 FTK Imager Lite 在不改動系統的情況下，擷取運行中的記憶體資料。
+- [Using FTK Imager Lite for Volatile Memory Acquisition](https://www.youtube.com/watch?v=D1GdiS-UOLg)
