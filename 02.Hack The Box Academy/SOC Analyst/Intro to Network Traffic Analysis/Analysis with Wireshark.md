@@ -1,0 +1,108 @@
+### Wireshark 基礎：介面與邏輯
+1. 三大核心視窗 (The Three Panes)
+    - 封包列表 (Packet List)：最上方。顯示編號、時間、來源/目的 IP、協定與摘要資訊。
+    - 封包細節 (Packet Details)：中間。依照 OSI 模型 將封包分層（從 L2 乙太網路到 L7 應用層），這是分析「封包內容」與「協定套娃」最重要的區域。
+    - 封包內容 (Packet Bytes)：最下方。顯示原始的 Hex（十六進位） 與 ASCII 內容。可用來驗證解碼是否正確。
+2. 過濾器邏輯：捕捉 vs. 顯示
+    - 捕捉過濾 (Capture Filters)：抓包前設定（如 host 192.168.1.1）。沒被抓到的封包會直接丟棄。
+    - 顯示過濾 (Display Filters)：抓包後設定。這只是「隱藏」不想看的封包，資料依然完整存在。
+---
+    
+### 常用顯示過濾器語法 (Display Filters)
+|目標|語法 (一律小寫)|備註|
+|---|---|---|
+|協定過濾|`tcp` / `udp` / `http` / `dns` / `tls`|顯示該層級以上的所有封包。|
+|IP 位址|`ip.addr == 192.168.x.x`|只要來源或目的符合該 IP 就顯示。|
+|特定連接埠|`tcp.port == 80 / tcp.port == 21`|顯示通過該門口的流量，包含三向握手。|
+|排除語法|`!tcp 或 not arp`|排除不感興趣的雜訊。|
+|內容包含|`http.request.method == "GET"`|只看網頁請求動作。|
+|組合語法|`http and ip.src == 192.168.x.x`|使用 `and` 或 `or` 進行精準定位。|
+---
+
+### Wireshark 進階功能與插件 (Plugins)
+Wireshark 內建了大量插件與分析模組，能自動將複雜的網路數據轉化為可視化的統計報表與重組後的資料。
+1. Statistics (統計) 標籤：流量宏觀分析
+這部分的插件專門用來產生流量報告，幫助資安人員快速掌握全貌。
+   - Protocol Hierarchy (協定分層統計)：
+     - 用途：顯示這段流量中，各個協定（如 TCP、UDP、HTTP）所佔的百分比。
+     - 鑑識重點：如果發現不應出現的協定（如在辦公室發現大量 BitTorrent）佔比過高，就是異常警訊。
+   - Endpoints (端點)：
+     - 用途：列出所有參與通訊的 IP 位址，並依照傳輸量 (Bytes) 排序。
+     - 鑑識重點：傳輸量異常巨大的 IP 往往是正在「資料竊取」或「下載大型惡意檔案」的嫌疑犯。
+   - Conversations (對話)：
+     - 用途：列出特定兩個 IP 之間的完整對話，包含發送了多少封包與位元組。
+       
+2. Analyze (分析) 標籤：深層行為檢視
+這部分的插件專門針對特定的對話或問題進行深入挖掘。
+   - Expert Information (專家資訊)：
+     - 用途：Wireshark 自動診斷出的網路異常（如封包重傳、連線中斷、語法錯誤）。
+     - 路徑：點擊視窗左下角的小圓點，或到 Analyze ➔ Expert Information。
+   - Follow Stream (追蹤串流)：
+     - 用途：將分散的 TCP 封包重新「縫合」，還原成人類可讀的對話文字或原始檔案數據。
+
+3. 資料提取插件 (Extracting Data)
+這是資安鑑識中最具「實體感」的功能，能從虛擬流量中救回真實檔案。
+   - Export Objects (匯出物件)：
+     - 用途：自動從 HTTP 流量中識別並提取出網頁圖片、HTML 原始碼或執行檔。
+     - 路徑：File ➔ Export Objects ➔ HTTP...。
+   - FTP 檔案還原：
+     - 用途：透過資料通道 (Port 20) 提取原始二進位數據。
+     - 關鍵動作：在 Follow TCP Stream 視窗將格式改為 Raw (原始資料) 後存檔，方可正確還原圖片或文件。
+---
+
+### 實戰操作：如何從封包中「挖資料」
+1. 快速匯出 HTTP 物件 (自動化)
+   - 路徑：File ➔ Export Objects ➔ HTTP...。
+   - 功能：Wireshark 會自動列出流量中出現過的所有圖片、HTML 或程式碼，你可以直接選取並點擊 Save 存檔。
+2. 強制解碼非標準埠號 (Decode As)
+   - 情境：如果你用 Port 2221 傳 FTP，Wireshark 預設看不懂，封包會顯示為灰色 TCP。
+   - 步驟：
+     1.對著該封包按 右鍵 ➔ 選擇 Decode As...。
+     2.在 Current 欄位下拉選擇 FTP ➔ 點擊 OK。
+     3.封包會變色，現在你可以使用 ftp 過濾器了。
+3. 追蹤對話與還原照片 (FTP 實戰)
+   1.定位指令：輸入 `ftp.request.command` 找出使用者登入的帳號 (`USER`)、密碼 (`PASS`) 以及傳檔指令 (`STOR/RETR`)。
+   2.定位資料：輸入 `ftp-data` 找出真正傳輸檔案內容的封包。
+   3.重組串流：對該封包點擊 右鍵 ➔ Follow ➔ TCP Stream。
+   4.正確存檔：在視窗下方將 `Show and save data as` 改為 `Raw` (原始資料)。點擊 `Save as...`，手動輸入正確的副檔名（例如 `test.jpg`）。
+<img width="1920" height="1032" alt="螢幕擷取畫面 2026-03-09 154732" src="https://github.com/user-attachments/assets/dc678cb2-8c0f-4a4b-9118-bda251ec03e1" />
+<img width="1920" height="1032" alt="螢幕擷取畫面 2026-03-09 154718" src="https://github.com/user-attachments/assets/23c81d67-99f3-421f-bcad-c5e6eebc4258" />
+4. FTP 區分「控制通道」（指令與登入，預設 21）與「資料通道」（檔案傳輸，預設 20），若自訂控制埠為 2221，資料埠在主動模式下為 2220，被動模式下則為隨機高位埠。
+---
+
+### 疑難排解：抓不到封包怎麼辦？
+1. 網路熱點 (Hotspot) 的坑
+   - 當電腦開啟熱點給手機連線時，流量不會走一般的「Wi-Fi」網卡。
+   - 解法：在 Wireshark 找一張名稱包含 "Local Area Connection " (區域連線)** 或 "Adapter for loopback" 的網卡（IP 通常是 `192.168.137.1`）。
+   - 可利用`ipconfig`確認每個ip對應的網卡
+2. 為什麼 Follow Stream 出現亂碼？
+    - 如果是 HTTPS/TLS：資料已被加密，除非有私鑰，否則無法還原明文。
+    - 如果是 FTP/HTTP 圖片：在 ASCII 模式下本來就是亂碼，必須切換到 Raw 模式才能看到正常的檔案。
+    
+### 資安分析師的統計工具 (Statistics)
+ - Protocol Hierarchy (協定分層)：查看各協定佔比，判斷是否有異常流量。
+ - Endpoints (端點)：找出傳輸量 (Bytes) 最大的 IP，這通常是資料竊取或大檔案下載的嫌疑犯。
+ - Expert Information (專家資訊)：點擊左下角小圓點，查看網路重傳 (Retransmission) 或連線中斷的紀錄。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
