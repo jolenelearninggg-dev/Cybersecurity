@@ -11,7 +11,21 @@ Windows 事件記錄是系統內建的日誌系統，記錄了系統組件、應
  - 每個事件都有 Event ID (唯一識別碼)、Level (嚴重程度：資訊、警告、錯誤、關鍵)、Source (來源軟體) 和 Computer (主機名)。
 
 ### 進階查詢與 XML
-(要補)
+XML 查詢：從「關鍵字搜尋」進化到「精準過濾」<br>
+在事件檢視器的傳統介面，你只能搜 Event ID、日期、關鍵字。<br>
+但如果你想搜：「找出所有來源 IP 為 192.168.1.100，且 Logon Type 為 10 的 RDP 登入」，傳統介面做不到。<br>
+
+###### XML 分頁讓你用 XPath 語法直接對準數據包的核心：
+```
+<QueryList>
+  <Query Id="0" Path="Security">
+    <Select Path="Security">*[EventData[Data[@Name='TargetLogonId']='0x3e7']]</Select>
+  </Query>
+</QueryList>
+```
+ - 精準度：可以直接針對 XML 標籤內的數值篩選。
+ - 效能：在數十萬筆日誌中，XML 篩選速度遠快於肉眼掃視。
+ - 複雜性：可以寫出 A 條件 AND B 條件 的複合式邏輯。
 
 ### SACL (System Access Control List) — 「系統稽核清單」
 如果把檔案比喻成一扇門，SACL 就是這扇門上面的 「連動監視器」。
